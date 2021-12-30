@@ -9,7 +9,7 @@ import UIKit
 
 class StarViewController: UIViewController {
     
-    //MARK: - IBOutlet
+    //MARK: - IBOutlet & var
     @IBOutlet weak var collectionView: UICollectionView!
     
     private var diaryList = [Diary]()
@@ -38,10 +38,6 @@ class StarViewController: UIViewController {
             object: nil
         )
     }
-//    override func viewWillAppear(_ animated: Bool) {
-//        super.viewWillAppear(animated)
-//        self.loadStarDiaryList()
-//    } //데이터가 동기화되면 viewDidLoad로 load넣어도됨.
     
     //MARK: - Method
     private func loadStarDiaryList() {
@@ -59,12 +55,9 @@ class StarViewController: UIViewController {
         } .sorted(by: {
             $0.date.compare($1.date) == .orderedDescending
         })
-        //willAppear -> didLoad로 load 메서드를 옮겼으니 이제 reload필요없음.
-        //self.collectionView.reloadData()
     }
     
     private func configureCollectionView() {
-        //코드로 컬렉션뷰 레이아웃 구성하는 방법.
         self.collectionView.collectionViewLayout = UICollectionViewFlowLayout()
         self.collectionView.contentInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
         self.collectionView.dataSource = self
@@ -80,7 +73,6 @@ class StarViewController: UIViewController {
     
     @objc func editDiaryNotification(_ notification: Notification) {
         guard let diary = notification.object as? Diary else { return }
-        //guard let row = notification.userInfo?["indexPath.row"] as? Int else { return }
         guard let index = self.diaryList.firstIndex(where: {
             $0.uuidString == diary.uuidString
         }) else { return }
@@ -95,18 +87,14 @@ class StarViewController: UIViewController {
         guard let starDiary = notification.object as? [String: Any] else { return }
         guard let diary = starDiary["diary"] as? Diary else { return }
         guard let isStar = starDiary["isStar"] as? Bool else { return }
-        //guard let indexPath = starDiary["indexPath"] as? IndexPath else { return }
         guard let uuidString = starDiary["uuidString"] as? String else { return }
-//        guard let index = self.diaryList.firstIndex(where: {
-//            $0.uuidString == uuidString }) else { return }
-        //위에 주석처리한 가드문을 여기쓰면 안됨. nil이면 함수가 조기종료되어 밑에가 실행 no.
         if isStar {
             self.diaryList.append(diary)
             self.diaryList = self.diaryList.sorted(by: {
                 $0.date.compare($1.date) == .orderedDescending
             })
             self.collectionView.reloadData()
-        } else {//즐겨찾기 해제될 때만 이 가드문 로직이 구현되도록.
+        } else {
             guard let index = self.diaryList.firstIndex(where: {
                 $0.uuidString == uuidString }) else { return }
             self.diaryList.remove(at: index)
@@ -118,26 +106,24 @@ class StarViewController: UIViewController {
         guard let uuidString = notification.object as? String else { return }
         guard let index = self.diaryList.firstIndex(where: { $0.uuidString == uuidString }) else { return }
         self.diaryList.remove(at: index)
-        //self.collectionView.deleteItems(at: [indexPath])
         self.collectionView.deleteItems(at: [IndexPath(row: index, section: 0)])
     }
 }
 
 //MARK: - Extension
-//컬렉션뷰에 일기장 목록을 표시할 준비.
 extension StarViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return self.diaryList.count
     }
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "StarCell", for: indexPath) as? StarCell else { return UICollectionViewCell() } //실패 시 빈 UI컬렉션뷰를 반환.
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "StarCell", for: indexPath) as? StarCell else { return UICollectionViewCell() }
         let diary = self.diaryList[indexPath.row]
         cell.titleLabel.text = diary.title
         cell.dateLabel.text = dateToString(date: diary.date)
         return cell
     }
 }
-//컬렉션뷰의 레이아웃을 구성.
+
 extension StarViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: UIScreen.main.bounds.width - 20, height: 80)
